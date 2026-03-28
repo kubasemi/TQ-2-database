@@ -469,8 +469,8 @@
             try {
                 const timestamp = Date.now();
                 const [itemsRes, relicsRes] = await Promise.all([
-                    fetch(`https://cdn.jsdelivr.net/gh/RoiMitha971/TQ2_DB_UniquesCharmsRelics@main/items.ts?t=\${timestamp}`),
-                    fetch(`https://cdn.jsdelivr.net/gh/RoiMitha971/TQ2_DB_UniquesCharmsRelics@main/relics_charms.ts?t=\${timestamp}`)
+                    fetch(`https://raw.githubusercontent.com/RoiMitha971/TQ2_DB_UniquesCharmsRelics/main/items.ts?t=\${timestamp}`),
+                    fetch(`https://raw.githubusercontent.com/RoiMitha971/TQ2_DB_UniquesCharmsRelics/main/relics_charms.ts?t=\${timestamp}`)
                 ]);
                 
                 if (!itemsRes.ok || !relicsRes.ok) throw new Error('Failed to fetch');
