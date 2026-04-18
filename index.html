@@ -585,8 +585,8 @@
                                 </div>
                                 ` : ''}
                                 <div class="meta-section">
-                                    ${r.enchantable_slots && r.enchantable_slots.length > 0 ? `<div class="requirement"><strong>Enchantable:</strong> ${r.enchantable_slots.join(', ')}</div>` : ''}
-                                    ${r.dropped_by ? `<p class="flavor-text">Dropped by: ${r.dropped_by}</p>` : ''}
+                                    ${r.enchantable_slots && r.enchantable_slots.length > 0 ? `<div class="requirement"><strong>Can Enchant:</strong> ${r.enchantable_slots.join(', ')}</div>` : ''}
+                                    ${(r.flavor_text || r.dropped_by) ? '<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 8px;">' + (r.flavor_text ? '<p class="flavor-text">&quot;' + r.flavor_text + '&quot;</p>' : '') + (r.dropped_by ? '<div><strong style="text-transform:uppercase; font-size:10px; color:var(--text-muted); letter-spacing:0.05em;">' + (r.category === 'Charm' ? 'Dropped By' : 'Dropped In') + '</strong><br><span class="flavor-text">' + r.dropped_by + '</span></div>' : '') + '</div>' : ''}
                                 </div>
                             </div>
                         </div>
