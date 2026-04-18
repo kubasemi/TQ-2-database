@@ -53,6 +53,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 16px;
+            transition: all 0.3s ease;
         }
 
         h1 {
@@ -108,6 +109,21 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
+            max-height: 500px;
+            opacity: 1;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        header.scrolled:not(:hover) .controls {
+            max-height: 0;
+            opacity: 0;
+            margin: 0;
+            gap: 0;
+        }
+
+        header.scrolled:not(:hover) .header-top {
+            margin-bottom: 0;
         }
 
         .search-box input {
