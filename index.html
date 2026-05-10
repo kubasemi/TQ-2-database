@@ -445,6 +445,9 @@
                 <div class="filters" id="typeFilters">
                     <!-- Filters will be injected here by JS -->
                 </div>
+                <div class="filters" id="slotFilters" style="margin-top: 8px; display: none;">
+                    <!-- Filter for slots will be injected here by JS -->
+                </div>
                 <div class="results-info" id="resultsInfo">
                     Loading database...
                 </div>
@@ -464,8 +467,17 @@
     </div>
 
     <script>
+        const formatDroppedBy = (val) => {
+            if (!val) return val;
+            return val
+                .replace(/chapter 1/gi, 'Flooded Farmlands')
+                .replace(/chapter 2/gi, 'Northern Beaches')
+                .replace(/chapter 3/gi, 'Arcadian Plains');
+        };
+
         const searchInput = document.getElementById('searchInput');
         const typeFilters = document.getElementById('typeFilters');
+        const slotFilters = document.getElementById('slotFilters');
         const itemGrid = document.getElementById('itemGrid');
         const resultsInfo = document.getElementById('resultsInfo');
         const navBtns = document.querySelectorAll('.nav-btn');
@@ -474,12 +486,14 @@
         
         let currentView = 'items';
         let activeType = 'all';
+        let activeRelicSlot = 'all';
         let searchTerm = '';
         
         let allItems = [];
         let allRelics = [];
         let itemTypes = [];
         let relicTypes = ['Relic', 'Charm'];
+        let relicSlots = [];
 
         async function init() {
             try {
@@ -507,6 +521,16 @@
                 allRelics = parseTsArray(await relicsRes.text());
                 
                 itemTypes = Array.from(new Set(allItems.map(i => i.item_type))).sort();
+                
+                const slotsSet = new Set();
+                allRelics.forEach(r => {
+                    if (r.enchantable_slots) {
+                        r.enchantable_slots.forEach(s => {
+                            s.split(',').forEach(splitS => slotsSet.add(splitS.trim()));
+                        });
+                    }
+                });
+                relicSlots = Array.from(slotsSet).sort();
                 
                 renderAll();
                 renderFilters();
@@ -580,7 +604,7 @@
                 ].join(' ').toLowerCase();
 
                 return `
-                    <div class="item-card view-relics hidden" data-type="${r.category.toLowerCase()}" data-search-content="${searchContent.replace(/"/g, '&quot;')}">
+                    <div class="item-card view-relics hidden" data-type="${r.category.toLowerCase()}" data-slots="${(r.enchantable_slots || []).join(',')}" data-search-content="${searchContent.replace(/"/g, '&quot;')}">
                         <div class="rarity-bar" style="background-color: ${r.category === 'Relic' ? '#f59e0b' : '#10b981'}"></div>
                         <div class="item-content">
                             <div class="item-header">
@@ -602,7 +626,7 @@
                                 ` : ''}
                                 <div class="meta-section">
                                     ${r.enchantable_slots && r.enchantable_slots.length > 0 ? `<div class="requirement"><strong>Can Enchant:</strong> ${r.enchantable_slots.join(', ')}</div>` : ''}
-                                    ${(r.flavor_text || r.dropped_by) ? '<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 8px;">' + (r.flavor_text ? '<p class="flavor-text">&quot;' + r.flavor_text + '&quot;</p>' : '') + (r.dropped_by ? '<div><strong style="text-transform:uppercase; font-size:10px; color:var(--text-muted); letter-spacing:0.05em;">' + (r.category === 'Charm' ? 'Dropped By' : 'Dropped In') + '</strong><br><span class="flavor-text">' + r.dropped_by + '</span></div>' : '') + '</div>' : ''}
+                                    ${(r.flavor_text || r.dropped_by) ? '<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 8px;">' + (r.flavor_text ? '<p class="flavor-text">&quot;' + r.flavor_text + '&quot;</p>' : '') + (r.dropped_by ? '<div><strong style="text-transform:uppercase; font-size:10px; color:var(--text-muted); letter-spacing:0.05em;">' + (r.category === 'Charm' ? 'Dropped By' : 'Dropped In') + '</strong><br><span class="flavor-text">' + formatDroppedBy(r.dropped_by) + '</span></div>' : '') + '</div>' : ''}
                                 </div>
                             </div>
                         </div>
@@ -625,6 +649,19 @@
             });
             
             typeFilters.innerHTML = html;
+
+            if (currentView === 'relics' && relicSlots.length > 0) {
+                let slotHtml = `<button class="filter-btn ${activeRelicSlot === 'all' ? 'active' : ''}" data-slot="all">All Slots</button>`;
+                relicSlots.forEach(slot => {
+                    slotHtml += `<button class="filter-btn ${activeRelicSlot === slot ? 'active' : ''}" data-slot="${slot}">${slot}</button>`;
+                });
+                slotFilters.innerHTML = slotHtml;
+                slotFilters.style.display = 'flex';
+                slotFilters.style.flexWrap = 'wrap';
+            } else {
+                slotFilters.innerHTML = '';
+                slotFilters.style.display = 'none';
+            }
         }
 
         function updateDisplay() {
@@ -642,11 +679,17 @@
                 
                 const type = card.getAttribute('data-type');
                 const searchContent = card.getAttribute('data-search-content');
+                const slotsStr = card.getAttribute('data-slots') || '';
+                const slotsArray = slotsStr ? slotsStr.split(',').flatMap(s => s.split(',').map(x => x.trim())) : [];
                 
                 const matchesType = activeType === 'all' || type === activeType;
                 const matchesSearch = !searchTerm || searchContent.includes(searchTerm);
+                let matchesSlot = true;
+                if (currentView === 'relics') {
+                    matchesSlot = activeRelicSlot === 'all' || slotsArray.some(s => s.split(',').map(x => x.trim()).includes(activeRelicSlot));
+                }
                 
-                if (matchesType && matchesSearch) {
+                if (matchesType && matchesSearch && matchesSlot) {
                     card.classList.remove('hidden');
                     visibleCount++;
                 } else {
@@ -665,6 +708,7 @@
                 
                 currentView = e.target.getAttribute('data-view');
                 activeType = 'all';
+                activeRelicSlot = 'all';
                 
                 if (currentView === 'relics') {
                     mainHeader.classList.add('view-relics-active');
@@ -684,9 +728,18 @@
 
         typeFilters.addEventListener('click', (e) => {
             if (e.target.classList.contains('filter-btn')) {
-                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                typeFilters.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
                 e.target.classList.add('active');
                 activeType = e.target.getAttribute('data-type');
+                updateDisplay();
+            }
+        });
+
+        slotFilters.addEventListener('click', (e) => {
+            if (e.target.classList.contains('filter-btn')) {
+                slotFilters.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                activeRelicSlot = e.target.getAttribute('data-slot');
                 updateDisplay();
             }
         });
